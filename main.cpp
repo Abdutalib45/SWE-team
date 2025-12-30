@@ -3,6 +3,8 @@
 #include <string>
 #include <windows.h>
 #include <conio.h>
+#include "PropertyManager.h"
+#include "UserManager.h"
 using namespace std;
 
 void textattr(int i)
@@ -59,14 +61,15 @@ void drawMenu(int selected)
 
     textattr(15);
 }
-bool executeMenuAction(int choice)
+bool executeMenuAction(int choice,sqlite3* db)
 {
     system("cls");
+    PropertyManager pm;
 
     switch (choice)
     {
     case 0:
-        cout << "Showing all properties...\n";
+        pm.viewAllProperties(db);
         break;
 
     case 1:
@@ -86,7 +89,7 @@ bool executeMenuAction(int choice)
     _getch();
     return true;
 }
-void runMainMenu()
+void runMainMenu(sqlite3* db)
 {
     int selected = 0;
     char key;
@@ -113,7 +116,7 @@ void runMainMenu()
         }
         else if (key == 13) // ENTER
         {
-            running = executeMenuAction(selected);
+            running = executeMenuAction(selected,db);
         }
     }
 }
@@ -145,11 +148,21 @@ int main() {
     }
 
     // 2. Create SQL statement
-    std::string sql = "CREATE TABLE IF NOT EXISTS greetings ("  \
+    /*std::string sql = "CREATE TABLE IF NOT EXISTS greetings ("  \
                       "id INTEGER PRIMARY KEY AUTOINCREMENT," \
                       "message TEXT NOT NULL);" \
                       "INSERT INTO greetings (message) VALUES ('Hello World from SQLite!');" \
-                      "SELECT * FROM greetings;";
+                      "SELECT * FROM greetings;";*/
+    string sql = "CREATE TABLE IF NOT EXISTS properties ("
+             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+             "name TEXT, location TEXT, price REAL, type TEXT, "
+             "isAvailable INTEGER, InfoNumber TEXT);" // Added InfoNumber here
+
+             "INSERT INTO properties (name, location, price, type, isAvailable, InfoNumber) VALUES "
+             "('Ocean View Villa', 'Malibu', 1250000.0, 'Buy', 1, '555-0101'),"
+             "('Downtown Apt', 'New York', 3500.0, 'Rent', 1, '555-0202'),"
+             "('Mountain Cabin', 'Aspen', 450000.0, 'Buy', 0, '555-0303');";
+            //sqlite3_exec(db, sql.c_str(), NULL, 0, NULL);
 
     // 3. Execute SQL statement
     rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);
@@ -161,9 +174,10 @@ int main() {
         std::cout << "Operation done successfully\n";
     }
 
+    runMainMenu(db);
     // 4. Close Database
     sqlite3_close(db);
 
-    runMainMenu();
+
     return 0;
 }
