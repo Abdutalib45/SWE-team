@@ -6,20 +6,17 @@
 #include "PropertyManager.h"
 #include "UserManager.h"
 #include "DBManager.h"
+#include "ConsoleUtils.h"
+
 using namespace std;
 
-void textattr(int i)
-{
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), i);
-}
 
-void gotoxy(int x, int y)
-{
-    COORD coord;
-    coord.X = x;
-    coord.Y = y;
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
+bool isLoggedIn = false;
+int currentUserId = -1;
+string currentUserEmail = "";
+
+
+
 void drawHeader() {
     textattr(14);
     gotoxy(15, 1); cout << "  _____  ______          _        ______  _____ _______       _______ ______ ";
@@ -76,14 +73,12 @@ bool executeMenuAction(int choice, sqlite3* db, DBManager* dbManager)
     switch (choice)
     {
     case 0:
-        pm.viewAllProperties(db, dbManager);
+        pm.viewAllProperties(db);
         break;
 
     case 1:
-
-        if (um.login(dbManager)) {
-            textattr(10); cout << "\nLogin Successful!";
-        }
+        UserManager um;
+        um.login(db);
         break;
 
     case 2:
