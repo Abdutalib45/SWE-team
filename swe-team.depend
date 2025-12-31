@@ -331,7 +331,7 @@
 	<sys/uio.h>
 	<math.h>
 
-1767149070 source:e:\supertryhard\swe\project\swe-team\main.cpp
+1767157709 source:e:\supertryhard\swe\project\swe-team\main.cpp
 	<iostream>
 	"sqlite3.h"
 	<string>
@@ -340,12 +340,13 @@
 	"PropertyManager.h"
 	"UserManager.h"
 	"DBManager.h"
+	"AdminManager.h"
 	"ConsoleUtils.h"
 
 1767105066 e:\supertryhard\swe\project\swe-team\sqlite3.h
 	<stdarg.h>
 
-1767149816 e:\supertryhard\swe\project\swe-team\propertymanager.h
+1767151313 e:\supertryhard\swe\project\swe-team\propertymanager.h
 	"UserManager.h"
 	<iostream>
 	<vector>
@@ -355,20 +356,20 @@
 	<windows.h>
 	<conio.h>
 
-1767144697 e:\supertryhard\swe\project\swe-team\usermanager.h
+1767151313 e:\supertryhard\swe\project\swe-team\usermanager.h
 	"sqlite3.h"
 
-1767138732 e:\supertryhard\swe\project\swe-team\dbmanager.h
+1767156108 e:\supertryhard\swe\project\swe-team\dbmanager.h
 	<iostream>
 	<string>
 	<vector>
 	"sqlite3.h"
 
-1767142695 e:\supertryhard\swe\project\swe-team\consoleutils.h
+1767160112 e:\supertryhard\swe\project\swe-team\consoleutils.h
 	<windows.h>
 	<iostream>
 
-1767149070 source:e:\supertryhard\swe\project\swe-team\usermanager.cpp
+1767158987 source:e:\supertryhard\swe\project\swe-team\usermanager.cpp
 	"UserManager.h"
 	<iostream>
 	<conio.h>
@@ -376,4 +377,16 @@
 	<cstring>
 	"ConsoleUtils.h"
 	<regex>
+
+1767160229 e:\supertryhard\swe\project\swe-team\adminmanager.h
+	"PropertyManager.h"
+	"UserManager.h"
+	"sqlite3.h"
+	<iostream>
+	<string>
+	<iomanip>
+	<conio.h>
+	<windows.h>
+	<iostream>
+	"ConsoleUtils.h"
 

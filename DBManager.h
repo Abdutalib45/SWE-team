@@ -47,38 +47,59 @@ public:
         return true;
     }
 
-    void initializeDatabase() {
-        std::string sql = "CREATE TABLE IF NOT EXISTS properties ("
-                          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                          "name TEXT, location TEXT, price REAL, type TEXT, "
-                          "isAvailable INTEGER, InfoNumber TEXT);"
-                          
-                          "CREATE TABLE IF NOT EXISTS users ("
-                          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                          "email TEXT UNIQUE, password TEXT, isAdmin INTEGER);"
-                          
-                          "CREATE TABLE IF NOT EXISTS appointments ("
-                          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                          "user_id INTEGER NOT NULL, "
-                          "property_id INTEGER NOT NULL, "
-                          "appointment_date TEXT NOT NULL, "
-                          "status TEXT DEFAULT 'pending', "
-                          "notes TEXT, "
-                          "FOREIGN KEY (user_id) REFERENCES users(id), "
-                          "FOREIGN KEY (property_id) REFERENCES properties(id));"
+void initializeDatabase() {
+        std::string sql =
+            "CREATE TABLE IF NOT EXISTS owners ("
+            "owner_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "name TEXT NOT NULL);"
 
-                          "INSERT OR IGNORE INTO properties (name, location, price, type, isAvailable, InfoNumber) VALUES "
-                          "('Ocean View Villa', 'Malibu', 1250000.0, 'Buy', 1, '555-0101'),"
-                          "('Downtown Apt', 'New York', 3500.0, 'Rent', 1, '555-0202'),"
-                          "('Mountain Cabin', 'Aspen', 450000.0, 'Buy', 0, '555-0303');"
-                          
-                          
-                          "INSERT OR IGNORE INTO users (email, password, isAdmin) VALUES "
-                          "('admin@system.com', 'admin123', 1),"
-                          "('user@system.com', 'user123', 0);";
+            "CREATE TABLE IF NOT EXISTS properties ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "name TEXT, "
+            "location TEXT, "
+            "price REAL, "
+            "type TEXT, "
+            "isAvailable INTEGER, "
+            "InfoNumber TEXT, "
+            "owner_id INTEGER, "
+            "FOREIGN KEY (owner_id) REFERENCES owners(owner_id));"
+
+            "CREATE TABLE IF NOT EXISTS users ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "email TEXT UNIQUE, "
+            "password TEXT, "
+            "isAdmin INTEGER);"
+
+            "CREATE TABLE IF NOT EXISTS appointments ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "user_id INTEGER NOT NULL, "
+            "property_id INTEGER NOT NULL, "
+            "appointment_date TEXT NOT NULL, "
+            "status TEXT DEFAULT 'pending', "
+            "notes TEXT, "
+            "FOREIGN KEY (user_id) REFERENCES users(id), "
+            "FOREIGN KEY (property_id) REFERENCES properties(id));"
+
+            // Insert owners
+            "INSERT OR IGNORE INTO owners (name) VALUES "
+            "('John Doe'),"
+            "('Alice Smith'),"
+            "('Michael Brown');"
+
+            // Insert properties with owner_id
+            "INSERT OR IGNORE INTO properties (name, location, price, type, isAvailable, InfoNumber, owner_id) VALUES "
+            "('Ocean View Villa', 'Malibu', 1250000.0, 'Buy', 1, '555-0101', 1),"
+            "('Downtown Apt', 'New York', 3500.0, 'Rent', 1, '555-0202', 2),"
+            "('Mountain Cabin', 'Aspen', 450000.0, 'Buy', 0, '555-0303', 3);"
+
+            // Insert default users
+            "INSERT OR IGNORE INTO users (email, password, isAdmin) VALUES "
+            "('admin@system.com', 'admin123', 1),"
+            "('user@system.com', 'user123', 0);";
 
         executeQuery(sql);
-    }
+}
+
 
     bool validateUser(const std::string& email, const std::string& password, int& userId, bool& isAdmin) {
         std::string sql = "SELECT id, isAdmin FROM users WHERE email = ? AND password = ?;";
@@ -102,7 +123,7 @@ public:
     // Authentication function
     bool authenticate(const std::string& email, const std::string& password, User& user) {
         if (!db) return false;
-        
+
         std::string sql = "SELECT id, email, isAdmin FROM users WHERE email = ? AND password = ?;";
         sqlite3_stmt* stmt;
         bool success = false;
