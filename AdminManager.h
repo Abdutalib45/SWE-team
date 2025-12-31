@@ -42,6 +42,7 @@ public:
 
     vector<Property> props;
     vector<string> ownerNames;
+    vector<const char*> ownerdetails;    
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         Property p;
@@ -141,19 +142,17 @@ public:
             string fields[5] = {"Name", "Location", "Price", "Type", "Contact"};
             string values[5] = {p.name, p.location, to_string(p.price), p.type, p.infoNumber};
 
-            // ⁄—÷ «·‹ labels Ê«·ﬁÌ„ «·ﬁœÌ„…
+            // √ö√ë√ñ √á√°√ú labels √¶√á√°√û√≠√£ √á√°√û√è√≠√£√â
             int startX = 5;
             for(int i=0;i<lineno;i++) {
                 gotoxy(startX, 5 + i*2);
                 cout << fields[i] << " (last value: " << values[i] << "): ";
             }
 
-            // «Õ”» »œ«Ì… „ﬂ«‰ «·ﬂ «»… »ÕÌÀ Ì»ﬁÏ »⁄œ ÿÊ· «·‹ label + ÿÊ· «·ﬁÌ„… «·ﬁœÌ„… + 3
             int editorX[5];
             for(int i=0;i<lineno;i++)
                 editorX[i] = startX + fields[i].length() + values[i].length() + 15;
 
-            // «” œ⁄«¡ «·‹ multiLineEditor
             editedLines = multiLineEditor(editorX[0], 5, maxLen, sr, er, lineno);
 
             string newName = strlen(editedLines[0]) > 0 ? string(editedLines[0]) : p.name;
