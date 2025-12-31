@@ -170,8 +170,10 @@ public:
                 if (!isLoggedIn) {
                     if (selectedOption == 0) return;
                     if (selectedOption == 1) {
-                        UserManager um;
-                        if (um.login(db)) continue; // Refresh after login
+                         UserManager um;
+                        bool success = um.login(db);
+                        if (success) continue;
+                        else _getch();
                     }
                     if (selectedOption == 2) exit(0);
                 } else if (p.available) {

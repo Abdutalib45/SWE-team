@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <cstring>
 #include "ConsoleUtils.h"
-
+#include <regex>
 #define NORMAL_PEN 0x07
 #define HIGHLIGHTED_PEN 0x70
 
@@ -72,34 +72,40 @@ char** multiLineEditor(int xpos, int ypos, int l, char sr[], char er[], int line
     }
 
     int currentLine = 0, currentChar = 0;
+    int oldLine = 0, oldChar = 0;
     char ch;
     bool done = false;
 
     while (!done)
     {
+        // „”Õ «·„ƒ‘— «·ﬁœÌ„
+        gotoxy(xpos + oldChar, ypos + oldLine * 2 + 1);
+        cout << " ";
+
+        // —”„ Ã„Ì⁄ «·”ÿÊ—
         for (int i = 0; i < lineno; i++)
         {
-            gotoxy(xpos, ypos + (i * 2));
-            textattr(HIGHLIGHTED_PEN);
-            // Mask password line (line index 1)
-            if (i == 1)
+            gotoxy(xpos, ypos + i * 2);
+            textattr(15); // ·Ê‰ ⁄«œÌ
+            for (int j = 0; j < lasts[i]; j++)
             {
-                for (int j = 0; j < strlen(lines[i]); j++)
-                {
-                    if (lines[i][j] != ' ')
-                        cout << '*';
-                    else
-                        cout << ' ';
-                }
+                if (i == 1) cout << '*'; // ﬂ·„… «·„—Ê— „Œ›Ì…
+                else cout << lines[i][j];
             }
-            else
-            {
-                cout << lines[i];
-            }
+            for (int j = lasts[i]; j < l; j++) cout << ' '; // „”Õ √Ì »ﬁ«Ì«
         }
 
-        textattr(NORMAL_PEN);
-        gotoxy(xpos + currentChar, ypos + (currentLine * 2));
+        // —”„ «·„ƒ‘—  Õ  «·„ﬂ«‰ «·Õ«·Ì
+        gotoxy(xpos + currentChar, ypos + currentLine * 2 + 1);
+        textattr(240); // Œ·›Ì… ”Êœ«¡ ⁄·Ï √»Ì÷
+        cout << "_";
+        textattr(15);
+
+        oldLine = currentLine;
+        oldChar = currentChar;
+
+        // Ê÷⁄ «·„ƒ‘— ›Ì „ﬂ«‰ «·ﬂ «»… (Õ—› ¬Œ—)
+        gotoxy(xpos + currentChar, ypos + currentLine * 2);
 
         ch = _getch();
 
@@ -108,20 +114,49 @@ char** multiLineEditor(int xpos, int ypos, int l, char sr[], char er[], int line
             ch = _getch();
             switch (ch)
             {
-                case 72: if (currentLine > 0) currentLine--; break; // Up
-                case 80: if (currentLine < lineno - 1) currentLine++; break; // Down
-                case 75: LeftMove(&currentChar); break; // Left
-                case 77: RightMove(&currentChar, &lasts[currentLine]); break; // Right
-                case 71: PressedHome(&currentChar, &lasts[currentLine]); break; // Home
-                case 79: PressedEnd(&currentChar, &lasts[currentLine]); break; // End
-                case 83: DeleteChar(lines[currentLine], &currentChar, &lasts[currentLine]); break; // Delete
+                case 72: // Up
+                    if (currentLine > 0) { currentLine--; if(currentChar > lasts[currentLine]) currentChar = lasts[currentLine]; }
+                    break;
+                case 80: // Down
+                    if (currentLine < lineno - 1) { currentLine++; if(currentChar > lasts[currentLine]) currentChar = lasts[currentLine]; }
+                    break;
+                case 75: // Left
+                    if (currentChar > 0) currentChar--;
+                    break;
+                case 77: // Right
+                    if (currentChar < lasts[currentLine]) currentChar++;
+                    break;
+                case 71: // Home
+                    currentChar = 0;
+                    break;
+                case 79: // End
+                    currentChar = lasts[currentLine];
+                    break;
+                case 83: // Delete
+                    if (currentChar < lasts[currentLine])
+                    {
+                        for (int i = currentChar; i < lasts[currentLine] - 1; i++)
+                            lines[currentLine][i] = lines[currentLine][i + 1];
+                        lines[currentLine][lasts[currentLine] - 1] = ' ';
+                        lasts[currentLine]--;
+                    }
+                    break;
             }
         }
         else
         {
             switch (ch)
             {
-                case 8: Backspace(lines[currentLine], &currentChar, &lasts[currentLine]); break;
+                case 8: // Backspace
+                    if (currentChar > 0)
+                    {
+                        currentChar--;
+                        for (int i = currentChar; i < lasts[currentLine] - 1; i++)
+                            lines[currentLine][i] = lines[currentLine][i + 1];
+                        lines[currentLine][lasts[currentLine] - 1] = ' ';
+                        lasts[currentLine]--;
+                    }
+                    break;
                 case 13: // Enter
                     if (currentLine == lineno - 1) done = true;
                     else { currentLine++; currentChar = 0; }
@@ -145,8 +180,6 @@ char** multiLineEditor(int xpos, int ypos, int l, char sr[], char er[], int line
     delete[] lasts;
     return lines;
 }
-
-
 
 string trim(const char* s)
 {
@@ -193,7 +226,16 @@ bool UserManager::login(sqlite3* db)
     gotoxy(startX + 2, startY + 3); cout << "Email: ";
     gotoxy(startX + 2, startY + 5); cout << "Password:  ";
 
-    // Set allowed chars
+    gotoxy(startX + 2, startY + height + 3);
+    textattr(8);
+    cout << "Do not have an account yet? Press [S] to Sign Up";
+    char c = _getch();
+    if (c == 's' || c == 'S')
+    {
+        signup(db);
+        return false;
+    }
+        // Set allowed chars
     char sr[] = { ' ', ' ' };
     char er[] = { '~', '~' };
 
@@ -244,3 +286,110 @@ bool UserManager::login(sqlite3* db)
     cout << "Wrong email or password!\n";
     return false;
 }
+
+bool UserManager::signup(sqlite3* db)
+{
+    system("cls");
+    int width = 40, height = 10;
+    int startX = 15, startY = 5;
+
+    // Frame
+    for (int y = startY; y <= startY + height; y++)
+    {
+        gotoxy(startX, y);
+        for (int x = startX; x <= startX + width; x++)
+        {
+            if (y == startY || y == startY + height) cout << "-";
+            else if (x == startX || x == startX + width) cout << "|";
+            else cout << " ";
+        }
+    }
+
+    gotoxy(startX + 10, startY);
+    textattr(HIGHLIGHTED_PEN);
+    cout << " SIGN UP ";
+    textattr(NORMAL_PEN);
+
+    gotoxy(startX + 2, startY + 3); cout << "Email: ";
+    gotoxy(startX + 2, startY + 5); cout << "Password: ";
+
+    char sr[] = { ' ', ' ' };
+    char er[] = { '~', '~' };
+
+    char** input = multiLineEditor(startX + 13, startY + 3, 25, sr, er, 2);
+
+    string email = trim(input[0]);
+    string password = trim(input[1]);
+
+    for (int i = 0; i < 2; i++) delete[] input[i];
+    delete[] input;
+
+    if (email.empty() || password.empty())
+    {
+        gotoxy(startX + 2, startY + height + 2);
+        cout << "Email and password required!";
+        _getch();
+        return false;
+    }
+
+
+    regex emailRegex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    regex passwordRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$");
+
+    if (!regex_match(email, emailRegex))
+    {
+        gotoxy(startX + 2, startY + height + 2);
+        cout << "Invalid email format!";
+        _getch();
+        return false;
+    }
+
+    if (!regex_match(password, passwordRegex))
+    {
+        gotoxy(startX + 2, startY + height + 2);
+        cout << "Weak password!";
+        gotoxy(startX + 2, startY + height + 3);
+        cout << "Min 8 chars, upper, lower, digit, symbol";
+        _getch();
+        return false;
+    }
+
+
+    string checkSQL =
+        "SELECT id FROM users WHERE email = '" + email + "';";
+
+    sqlite3_stmt* checkStmt;
+    if (sqlite3_prepare_v2(db, checkSQL.c_str(), -1, &checkStmt, nullptr) == SQLITE_OK)
+    {
+        if (sqlite3_step(checkStmt) == SQLITE_ROW)
+        {
+            gotoxy(startX + 2, startY + height + 2);
+            cout << "Email already exists!";
+            sqlite3_finalize(checkStmt);
+            _getch();
+            return false;
+        }
+    }
+    sqlite3_finalize(checkStmt);
+
+
+    string insertSQL =
+        "INSERT INTO users (email, password, isAdmin) VALUES ('"
+        + email + "', '" + password + "', 0);";
+
+    char* errMsg = nullptr;
+    if (sqlite3_exec(db, insertSQL.c_str(), nullptr, nullptr, &errMsg) != SQLITE_OK)
+    {
+        gotoxy(startX + 2, startY + height + 2);
+        cout << "Signup failed!";
+        sqlite3_free(errMsg);
+        _getch();
+        return false;
+    }
+
+    gotoxy(startX + 2, startY + height + 2);
+    cout << "Signup successful! You can login now.";
+    _getch();
+    return true;
+}
+

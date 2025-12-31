@@ -10,12 +10,11 @@
 
 using namespace std;
 
-
 bool isLoggedIn = false;
 int currentUserId = -1;
 string currentUserEmail = "";
 
-
+/* ================= HEADER ================= */
 
 void drawHeader() {
     textattr(14);
@@ -29,40 +28,62 @@ void drawHeader() {
     textattr(11);
     gotoxy(35, 8); cout << "--- PROPERTY MANAGEMENT SYSTEM ---";
 }
+
+/* ================= MENU ================= */
+
 void drawMenu(int selected, bool firstDraw)
 {
-    // Only clear the full screen and draw header on the first entry
-    // or after returning from another screen.
     if (firstDraw) {
         system("cls");
         drawHeader();
     }
 
-    const char* menu[] = {
+    const char* menuLoggedOut[] = {
         "View Properties",
         "Login",
+        "Signup",
         "Search Properties",
         "Exit"
     };
 
+    const char* menuLoggedIn[] = {
+        "View Properties",
+        "Logout",
+        "Search Properties",
+        "Exit"
+    };
+
+    const char** menu;
+    int numOptions;
+
+    if (isLoggedIn) {
+        menu = menuLoggedIn;
+        numOptions = 4;
+    } else {
+        menu = menuLoggedOut;
+        numOptions = 5;
+    }
+
     int y = 12;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < numOptions; i++)
     {
         gotoxy(38, y + i * 2);
 
         if (i == selected)
         {
-            textattr(240); // Highlight: Black text on White background
-            cout << "> " << menu[i] << "  "; // Extra spaces to clear old chars
+            textattr(240);
+            cout << "> " << menu[i] << "  ";
         }
         else
         {
-            textattr(15); // Normal: White text on Black background
+            textattr(15);
             cout << "  " << menu[i] << "  ";
         }
     }
     textattr(15);
 }
+
+/* ================= ACTIONS ================= */
 
 bool executeMenuAction(int choice, sqlite3* db, DBManager* dbManager)
 {
@@ -70,43 +91,72 @@ bool executeMenuAction(int choice, sqlite3* db, DBManager* dbManager)
     PropertyManager pm;
     UserManager um;
 
-    switch (choice)
+    if (!isLoggedIn)
     {
-    case 0:
-        pm.viewAllProperties(db);
-        break;
+        switch (choice)
+        {
+        case 0:
+            pm.viewAllProperties(db);
+            break;
 
-    case 1:
-        UserManager um;
-        um.login(db);
-        break;
+        case 1: // Login
+            if (um.login(db))
+                isLoggedIn = true;
+            break;
 
-    case 2:
-        // You can add your search function call here later
-        cout << "Search functionality coming soon...";
-        break;
+        case 2: // Signup
+            um.signup(db);
+            break;
 
-    case 3:
-        textattr(12);
-        cout << "Exiting system...\n";
-        return false;
+        case 3:
+            cout << "Search functionality coming soon...";
+            break;
+
+        case 4:
+            cout << "Exiting system...\n";
+            return false;
+        }
+    }
+    else
+    {
+        switch (choice)
+        {
+        case 0:
+            pm.viewAllProperties(db);
+            break;
+
+        case 1: // Logout
+            isLoggedIn = false;
+            currentUserId = -1;
+            currentUserEmail = "";
+            cout << "Logged out successfully!";
+            break;
+
+        case 2:
+            cout << "Search functionality coming soon...";
+            break;
+
+        case 3:
+            cout << "Exiting system...\n";
+            return false;
+        }
     }
 
-    if (choice != 3) {
-        textattr(8);
-        cout << "\n\nPress any key to return to main menu...";
-        _getch();
-    }
+    textattr(8);
+    cout << "\n\nPress any key to return to main menu...";
+    _getch();
     return true;
 }
+
+/* ================= MAIN LOOP ================= */
+
 void runMainMenu(sqlite3* db, DBManager* dbManager)
 {
     int selected = 0;
     char key;
     bool running = true;
-    bool needsFullRedraw = true; // Flag to control system("cls")
+    bool needsFullRedraw = true;
 
-    // Hide Cursor
     CONSOLE_CURSOR_INFO cursorInfo;
     GetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
     cursorInfo.bVisible = false;
@@ -115,37 +165,37 @@ void runMainMenu(sqlite3* db, DBManager* dbManager)
     while (running)
     {
         drawMenu(selected, needsFullRedraw);
-        needsFullRedraw = false; // After the first draw, don't cls again
+        needsFullRedraw = false;
 
         key = _getch();
 
+        int maxOption = isLoggedIn ? 3 : 4;
+
         if (key == 72 || key == 'w' || key == 'W') // UP
-        {
-            selected = (selected <= 0) ? 3 : selected - 1;
-        }
+            selected = (selected <= 0) ? maxOption : selected - 1;
+
         else if (key == 80 || key == 's' || key == 'S') // DOWN
-        {
-            selected = (selected >= 3) ? 0 : selected + 1;
-        }
+            selected = (selected >= maxOption) ? 0 : selected + 1;
+
         else if (key == 13) // ENTER
         {
-
             running = executeMenuAction(selected, db, dbManager);
+            selected = 0;
             needsFullRedraw = true;
         }
     }
 }
 
+/* ================= MAIN ================= */
 
-int main() {
+int main()
+{
     DBManager dbManager("test.db");
 
-    if (!dbManager.getDB()) {
+    if (!dbManager.getDB())
         return 0;
-    }
 
     dbManager.initializeDatabase();
-
     runMainMenu(dbManager.getDB(), &dbManager);
 
     return 0;
