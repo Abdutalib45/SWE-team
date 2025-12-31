@@ -100,7 +100,10 @@ public:
 
                 string sqlUpdate = "UPDATE properties SET isAvailable=" + to_string(available == 1 ? 0 : 1) + " WHERE id=" + to_string(id);
                 if (sqlite3_exec(db, sqlUpdate.c_str(), nullptr, nullptr, nullptr) == SQLITE_OK) {
-                    cout << "Property " << (available == 1 ? "locked" : "unlocked") << " successfully.\n";
+                    string state="unlocked";
+                    if(available==1)
+                        state="locked";
+                    cout<< "Property "<<state<<" successfully.\n";
                 } else {
                     cout << "Failed to update property.\n";
                 }
@@ -142,7 +145,6 @@ public:
             string fields[5] = {"Name", "Location", "Price", "Type", "Contact"};
             string values[5] = {p.name, p.location, to_string(p.price), p.type, p.infoNumber};
 
-            // ÚÑÖ ÇáÜ labels æÇáÞíã ÇáÞÏíãÉ
             int startX = 5;
             for(int i=0;i<lineno;i++) {
                 gotoxy(startX, 5 + i*2);
